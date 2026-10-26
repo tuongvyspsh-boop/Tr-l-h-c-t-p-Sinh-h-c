@@ -1,4 +1,4 @@
-import { BiologyTerm } from '../types/biology';
+import { BiologyTerm, TermCorrection } from '../types/biology';
 
 /**
  * Pronounces an English biology term using the browser's Web Speech API SpeechSynthesis.
@@ -33,11 +33,12 @@ export function speakEnglishTerm(term: string): boolean {
 }
 
 /**
- * Calls server-side Gemini API with query and contextTerm from standard database.
+ * Calls server-side Gemini API with query, contextTerm, and optional termCorrection.
  */
 export async function askBiologyAssistant(
   message: string,
-  contextTerm?: BiologyTerm
+  contextTerm?: BiologyTerm,
+  correction?: TermCorrection
 ): Promise<{ text?: string; error?: string }> {
   try {
     const response = await fetch('/api/chat', {
@@ -48,6 +49,7 @@ export async function askBiologyAssistant(
       body: JSON.stringify({
         message,
         contextTerm,
+        correction,
       }),
     });
 

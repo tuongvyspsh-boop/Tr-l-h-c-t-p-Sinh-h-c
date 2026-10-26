@@ -146,9 +146,10 @@ const App: React.FC = () => {
       // 3. Search Local Biology Database First
       const searchResult = await biologyDataService.searchTerm(trimmed);
       const matchedTerm = searchResult.bestMatch;
+      const correction = searchResult.correction;
 
       // 4. Call Server-Side Gemini
-      const aiResponse = await askBiologyAssistant(trimmed, matchedTerm);
+      const aiResponse = await askBiologyAssistant(trimmed, matchedTerm, correction);
 
       let botText: string | undefined = undefined;
       let aiSuggestedAnswer: string | undefined = undefined;
@@ -175,6 +176,7 @@ const App: React.FC = () => {
         timestamp: Date.now(),
         text: botText,
         matchedTerm,
+        correction,
         unrecognizedQuery,
         aiSuggestedAnswer,
       };
@@ -183,12 +185,15 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error('Search error:', err);
       // Fallback: still show local database match if any
-      const searchResult = await biologyDataService.searchTerm(trimmed).catch(() => ({ bestMatch: undefined, matches: [] }));
+      const searchResult = await biologyDataService
+        .searchTerm(trimmed)
+        .catch(() => ({ bestMatch: undefined, matches: [], correction: undefined }));
       const assistantMsg: ChatMessageType = {
         id: `bot-err-${Date.now()}`,
         sender: 'assistant',
         timestamp: Date.now(),
         matchedTerm: searchResult.bestMatch,
+        correction: searchResult.correction,
         text: searchResult.bestMatch
           ? undefined
           : 'Hệ thống AI đang tạm thời không phản hồi. Bạn vẫn có thể tra cứu dữ liệu Sinh học chuẩn.',

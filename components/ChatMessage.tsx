@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChatMessage as ChatMessageType, BiologyTerm } from '../types/biology';
 import TermResult from './TermResult';
+import TermCorrectionAlert from './TermCorrectionAlert';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -37,6 +38,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       </div>
 
       <div className="flex-1 max-w-full space-y-3">
+        {/* Term Correction Banner if student typed misspelled or legacy term */}
+        {message.correction && (
+          <TermCorrectionAlert correction={message.correction} />
+        )}
+
         {/* If standard term matched from teacher DB */}
         {message.matchedTerm && (
           <div>

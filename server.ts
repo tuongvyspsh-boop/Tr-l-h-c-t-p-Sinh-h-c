@@ -12,19 +12,25 @@ Nguyên tắc:
 1. Ưu tiên tuyệt đối dữ liệu Sinh học được cung cấp trong CONTEXT (nếu có).
 2. Không được tự ý sửa thuật ngữ chuẩn đã có trong CONTEXT.
 3. Không được khẳng định thông tin ngoài CONTEXT là nội dung SGK.
-4. Nếu không có dữ liệu chuẩn trong CONTEXT, hãy ghi rõ:
+4. ĐẶC BIỆT VỀ CHỈNH SỬA THUẬT NGỮ SAI/CŨ:
+Khi học sinh viết sai từ hoặc sử dụng thuật ngữ cũ/nhầm lẫn (ví dụ: viết "AND" thay vì "DNA", viết "Gen" thay vì "Gene", viết "ARN" thay vì "RNA", "Enzim" thay vì "Enzyme", "mitos" thay vì "Mitosis"...):
+- BẮT BUỘC phải nhẹ nhàng nhắc nhở và đính chính ngay ở phần đầu câu trả lời:
+  + Nêu rõ từ học sinh đã nhập sai/cũ (ví dụ: 'AND', 'Gen'...).
+  + Hướng dẫn cách viết chuẩn tiếng Anh theo SGK GDPT 2018 (ví dụ: Gene, DNA, RNA, Enzyme...).
+  + Hướng dẫn cách đọc/phát âm chuẩn tiếng Anh kèm phiên âm quốc tế (ví dụ: Gene phát âm là /dʒiːn/, DNA phát âm là /ˌdiː.enˈeɪ/...).
+5. Nếu không có dữ liệu chuẩn trong CONTEXT, hãy ghi rõ:
 "Thuật ngữ này chưa có trong cơ sở dữ liệu chuẩn của giáo viên."
 Sau đó, nếu bạn có thể giải thích, hãy đặt trong một mục riêng có tiêu đề:
 "📌 Gợi ý tham khảo từ AI (chưa được giáo viên xác nhận)"
-5. Giải thích bằng tiếng Việt dễ hiểu, phù hợp học sinh THPT.
-6. Khi có thuật ngữ tiếng Anh:
-- Hiển thị thuật ngữ
-- Phiên âm
+6. Giải thích bằng tiếng Việt dễ hiểu, phù hợp học sinh THPT.
+7. Khi có thuật ngữ tiếng Anh:
+- Hiển thị thuật ngữ chuẩn
+- Phiên âm chuẩn
 - Nghĩa tiếng Việt
-7. Trả lời ngắn gọn, rõ ràng, chia thành các phần rõ rệt (Định nghĩa, Giải thích dễ hiểu, Ví dụ, Gợi ý ghi nhớ).
-8. Có thể dùng ví dụ trực quan đời sống để học sinh dễ hiểu.
-9. Không tạo thông tin hoặc nguồn tài liệu giả. Tuyệt đối không bịa kiến thức.
-10. Nếu câu hỏi hoàn toàn không liên quan đến Sinh học:
+8. Trả lời ngắn gọn, rõ ràng, chia thành các phần rõ rệt (Định nghĩa, Giải thích dễ hiểu, Ví dụ, Gợi ý ghi nhớ).
+9. Có thể dùng ví dụ trực quan đời sống để học sinh dễ hiểu.
+10. Không tạo thông tin hoặc nguồn tài liệu giả. Tuyệt đối không bịa kiến thức.
+11. Nếu câu hỏi hoàn toàn không liên quan đến Sinh học:
 Trả lời:
 "Mình là trợ lý Sinh học. Bạn hãy hỏi mình một nội dung liên quan đến Sinh học nhé."`;
 
@@ -56,7 +62,7 @@ async function main() {
   // Chat completion endpoint via Gemini
   app.post('/api/chat', async (req, res) => {
     try {
-      const { message, contextTerm } = req.body;
+      const { message, contextTerm, correction } = req.body;
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'Nội dung câu hỏi không được để trống.' });
       }
@@ -75,9 +81,19 @@ async function main() {
 
 [CÂU HỎI CỦA HỌC SINH]:
 ${message}
+${
+  correction
+    ? `\n[LƯU Ý ĐẶC BIỆT VỀ CHỈNH SỬA TỪ]:
+Học sinh đã gõ từ chưa chuẩn: "${correction.originalWord}".
+Cách viết chuẩn tiếng Anh theo GDPT 2018: "${correction.standardEnglish}".
+Phiên âm quốc tế: "${correction.standardPronunciation}".
+Ghi chú đính chính: ${correction.note}
+=> Hãy mở đầu câu trả lời bằng lời nhắc nhở thân thiện đính chính cách viết và hướng dẫn cách đọc phát âm chuẩn tiếng Anh!`
+    : ''
+}
 
 Dựa trên dữ liệu chuẩn ở CONTEXT, hãy trả lời câu hỏi của học sinh theo cấu trúc 7 phần rõ ràng:
-1. THUẬT NGỮ TIẾNG ANH
+1. THUẬT NGỮ TIẾNG ANH (và lưu ý cách viết chuẩn)
 2. PHIÊN ÂM
 3. THUẬT NGỮ TIẾNG VIỆT
 4. ĐỊNH NGHĨA NGẮN GỌN
@@ -88,15 +104,23 @@ Dựa trên dữ liệu chuẩn ở CONTEXT, hãy trả lời câu hỏi của h
         promptWithContext = `[LƯU Ý: KHÔNG TÌM THẤY TRONG DỮ LIỆU CHUẨN CỦA GIÁO VIÊN]
 [CÂU HỎI CỦA HỌC SINH]:
 ${message}
+${
+  correction
+    ? `\n[LƯU Ý ĐẶC BIỆT VỀ CHỈNH SỬA TỪ]:
+Học sinh đã gõ từ chưa chuẩn: "${correction.originalWord}".
+Cách viết chuẩn tiếng Anh: "${correction.standardEnglish}" (phiên âm: ${correction.standardPronunciation}).
+Ghi chú: ${correction.note}
+=> Hãy đính chính cách viết và hướng dẫn cách đọc chuẩn tiếng Anh ngay ở đầu câu trả lời!`
+    : ''
+}
 
 Hãy thông báo: "Thuật ngữ này chưa có trong cơ sở dữ liệu chuẩn của giáo viên."
 Sau đó, nếu đây là câu hỏi Sinh học, cung cấp:
 "📌 Gợi ý tham khảo từ AI (chưa được giáo viên xác nhận)" với cấu trúc dễ hiểu.
-Nếu không phải câu hỏi Sinh học, nhắc nhở học sinh theo nguyên tắc 10.`;
+Nếu không phải câu hỏi Sinh học, nhắc nhở học sinh theo nguyên tắc 11.`;
       }
 
       let textResult = '';
-      // Try gemini-flash-latest or gemini-3.8-flash
       try {
         const response = await ai.models.generateContent({
           model: 'gemini-flash-latest',

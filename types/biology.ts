@@ -12,12 +12,21 @@ export interface BiologyTerm {
   keywords: string[];
 }
 
+export interface TermCorrection {
+  originalWord: string;
+  standardEnglish: string;
+  standardPronunciation: string;
+  vietnameseTerm: string;
+  note: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   timestamp: number;
   text?: string;
   matchedTerm?: BiologyTerm;
+  correction?: TermCorrection;
   isAiFallback?: boolean;
   aiSuggestedAnswer?: string;
   unrecognizedQuery?: boolean;

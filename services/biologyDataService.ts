@@ -1,7 +1,108 @@
 import defaultTerms from '../data/biologyTerms.json';
-import { BiologyTerm } from '../types/biology';
+import { BiologyTerm, TermCorrection } from '../types/biology';
 
 const STORAGE_KEY = 'bio_terms_custom_db';
+
+/**
+ * Common non-standard, legacy or misspelled terms mapped to their standard counterparts.
+ */
+const CORRECTION_RULES: {
+  patterns: RegExp[];
+  originalDisplay: string;
+  targetEnglish: string;
+  targetPronunciation: string;
+  vietnameseTerm: string;
+  note: string;
+}[] = [
+  {
+    patterns: [/\band\b/i, /\badn\b/i],
+    originalDisplay: 'AND / ADN',
+    targetEnglish: 'DNA',
+    targetPronunciation: '/ˌdiː.enˈeɪ/',
+    vietnameseTerm: 'Axit đêôxiribônuclêic (DNA)',
+    note: "Theo Chương trình GDPT 2018, danh pháp quốc tế chuẩn là 'DNA' (phát âm: /ˌdiː.enˈeɪ/), không dùng 'AND' (lỗi gõ nhầm) hoặc cách viết cũ 'ADN'.",
+  },
+  {
+    patterns: [/\bgen\b/i],
+    originalDisplay: 'Gen',
+    targetEnglish: 'Gene',
+    targetPronunciation: '/dʒiːn/',
+    vietnameseTerm: 'Gen',
+    note: "Theo Chương trình GDPT 2018, danh pháp chuẩn quốc tế đã đổi từ 'Gen' thành 'Gene' (phát âm chuẩn tiếng Anh: /dʒiːn/).",
+  },
+  {
+    patterns: [/\barn\b/i],
+    originalDisplay: 'ARN',
+    targetEnglish: 'RNA',
+    targetPronunciation: '/ˌɑːr.enˈeɪ/',
+    vietnameseTerm: 'Axit ribônuclêic (RNA)',
+    note: "SGK mới sử dụng tên gọi quốc tế chuẩn là 'RNA' (phát âm: /ˌɑːr.enˈeɪ/) thay cho cách viết cũ 'ARN'.",
+  },
+  {
+    patterns: [/\benzim\b/i],
+    originalDisplay: 'Enzim',
+    targetEnglish: 'Enzyme',
+    targetPronunciation: '/ˈen.zaɪm/',
+    vietnameseTerm: 'Enzyme (Men sinh học)',
+    note: "Trong SGK GDPT 2018, 'Enzim' được viết theo chuẩn danh pháp quốc tế là 'Enzyme' (phát âm: /ˈen.zaɪm/).",
+  },
+  {
+    patterns: [/\baxit amin\b/i, /\baminoaxit\b/i, /\baa\b/i],
+    originalDisplay: 'Axit amin',
+    targetEnglish: 'Amino acid',
+    targetPronunciation: '/əˌmiː.nəʊ ˈæs.ɪd/',
+    vietnameseTerm: 'Axit amin (Amino acid)',
+    note: "SGK GDPT 2018 sử dụng thuật ngữ quốc tế 'Amino acid' (phát âm: /əˌmiː.nəʊ ˈæs.ɪd/) thay cho 'Axit amin'.",
+  },
+  {
+    patterns: [/\bnucleotit\b/i, /\bnuclêôtit\b/i, /\bnu\b/i],
+    originalDisplay: 'Nuclêôtit',
+    targetEnglish: 'Nucleotide',
+    targetPronunciation: '/ˈnjuː.kli.ə.taɪd/',
+    vietnameseTerm: 'Nuclêôtit (Nucleotide)',
+    note: "SGK GDPT 2018 viết chuẩn quốc tế là 'Nucleotide' (phát âm: /ˈnjuː.kli.ə.taɪd/) thay cho cách viết 'Nuclêôtit'.",
+  },
+  {
+    patterns: [/\briboxom\b/i, /\bribôxôm\b/i],
+    originalDisplay: 'Ribôxôm',
+    targetEnglish: 'Ribosome',
+    targetPronunciation: '/ˈraɪ.bə.səʊm/',
+    vietnameseTerm: 'Ribôxôm (Ribosome)',
+    note: "SGK mới viết chuẩn quốc tế là 'Ribosome' (phát âm: /ˈraɪ.bə.səʊm/) thay cho 'Ribôxôm'.",
+  },
+  {
+    patterns: [/\bnst\b/i, /\bnhiem sac the\b/i, /\bnhiễm sắc thể\b/i, /\bcromosom\b/i, /\bcromosome\b/i],
+    originalDisplay: 'Nhiễm sắc thể (NST)',
+    targetEnglish: 'Chromosome',
+    targetPronunciation: '/ˈkrəʊ.mə.səʊm/',
+    vietnameseTerm: 'Nhiễm sắc thể',
+    note: "Thuật ngữ tiếng Anh chuẩn của Nhiễm sắc thể theo SGK mới là 'Chromosome' (phát âm: /ˈkrəʊ.mə.səʊm/).",
+  },
+  {
+    patterns: [/\bmitos\b/i],
+    originalDisplay: 'mitos',
+    targetEnglish: 'Mitosis',
+    targetPronunciation: '/maɪˈtəʊ.sɪs/',
+    vietnameseTerm: 'Nguyên phân',
+    note: "Bạn đã viết thiếu chữ 'is' ('mitos'). Cách viết chuẩn tiếng Anh là 'Mitosis' (phát âm: /maɪˈtəʊ.sɪs/).",
+  },
+  {
+    patterns: [/\bmeios\b/i],
+    originalDisplay: 'meios',
+    targetEnglish: 'Meiosis',
+    targetPronunciation: '/maɪˈəʊ.sɪs/',
+    vietnameseTerm: 'Giảm phân',
+    note: "Bạn đã viết thiếu chữ 'is' ('meios'). Cách viết chuẩn tiếng Anh là 'Meiosis' (phát âm: /maɪˈəʊ.sɪs/).",
+  },
+  {
+    patterns: [/\boperonlak\b/i, /\boperon lac\b/i],
+    originalDisplay: 'operonlak',
+    targetEnglish: 'Operon Lac',
+    targetPronunciation: '/ˈɒp.ər.ɒn læk/',
+    vietnameseTerm: 'Cụm gen Operon Lac',
+    note: "Cách viết chuẩn theo SGK là 'Operon Lac' (phát âm: /ˈɒp.ər.ɒn læk/).",
+  },
+];
 
 /**
  * Normalizes text for insensitive Vietnamese & English search:
@@ -55,9 +156,6 @@ class BiologyDataService {
     this.loadTerms();
   }
 
-  /**
-   * Loads initial terms from biologyTerms.json merged with any teacher edits in localStorage
-   */
   private loadTerms(): void {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -82,31 +180,61 @@ class BiologyDataService {
     }
   }
 
-  /**
-   * Get all biology terms
-   */
   public async getAllTerms(): Promise<BiologyTerm[]> {
     return [...this.terms];
   }
 
-  /**
-   * Find term by ID
-   */
   public async getTermById(id: string): Promise<BiologyTerm | undefined> {
     return this.terms.find((t) => t.id === id);
   }
 
   /**
-   * Smart search across English, Vietnamese, Pronunciation, Keywords, and Topics.
-   * Returns sorted results with match score.
+   * Checks if the student used a misspelled or legacy term, and returns correction advice.
    */
-  public async searchTerm(rawQuery: string): Promise<{ bestMatch?: BiologyTerm; matches: BiologyTerm[] }> {
+  public detectTermCorrection(rawQuery: string): TermCorrection | undefined {
+    if (!rawQuery) return undefined;
+    const lower = rawQuery.toLowerCase();
+
+    for (const rule of CORRECTION_RULES) {
+      for (const pattern of rule.patterns) {
+        if (pattern.test(lower)) {
+          return {
+            originalWord: rule.originalDisplay,
+            standardEnglish: rule.targetEnglish,
+            standardPronunciation: rule.targetPronunciation,
+            vietnameseTerm: rule.vietnameseTerm,
+            note: rule.note,
+          };
+        }
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Smart search across English, Vietnamese, Pronunciation, Keywords, and Topics.
+   * Auto-detects typos/old terms (like "and", "gen") and points to correct standard term.
+   */
+  public async searchTerm(rawQuery: string): Promise<{
+    bestMatch?: BiologyTerm;
+    matches: BiologyTerm[];
+    correction?: TermCorrection;
+  }> {
     if (!rawQuery || !rawQuery.trim()) {
       return { matches: [] };
     }
 
-    const cleanedQuery = cleanQuestionQuery(rawQuery);
-    const normalizedRaw = normalizeSearchText(rawQuery);
+    // 1. Check for typos or legacy terms
+    const correction = this.detectTermCorrection(rawQuery);
+
+    let queryToSearch = rawQuery;
+    if (correction) {
+      // Direct query to the corrected English term
+      queryToSearch = correction.standardEnglish;
+    }
+
+    const cleanedQuery = cleanQuestionQuery(queryToSearch);
+    const normalizedRaw = normalizeSearchText(queryToSearch);
     const queryToUse = cleanedQuery.length > 0 ? cleanedQuery : normalizedRaw;
 
     const scoredMatches: { term: BiologyTerm; score: number }[] = [];
@@ -164,14 +292,21 @@ class BiologyDataService {
     scoredMatches.sort((a, b) => b.score - a.score);
 
     const matches = scoredMatches.map((item) => item.term);
-    const bestMatch = scoredMatches.length > 0 && scoredMatches[0].score >= 50 ? scoredMatches[0].term : undefined;
+    let bestMatch = scoredMatches.length > 0 && scoredMatches[0].score >= 50 ? scoredMatches[0].term : undefined;
 
-    return { bestMatch, matches };
+    // If correction was found, explicitly match with targetEnglish if available
+    if (correction && (!bestMatch || bestMatch.englishTerm.toLowerCase() !== correction.standardEnglish.toLowerCase())) {
+      const exactTarget = this.terms.find(
+        (t) => t.englishTerm.toLowerCase() === correction.standardEnglish.toLowerCase()
+      );
+      if (exactTarget) {
+        bestMatch = exactTarget;
+      }
+    }
+
+    return { bestMatch, matches, correction };
   }
 
-  /**
-   * Add a new term (Teacher / Admin)
-   */
   public async addTerm(termData: Omit<BiologyTerm, 'id'> & { id?: string }): Promise<BiologyTerm> {
     const newId = termData.id || `BIO${String(this.terms.length + 1).padStart(3, '0')}`;
     const newTerm: BiologyTerm = {
@@ -184,9 +319,6 @@ class BiologyDataService {
     return newTerm;
   }
 
-  /**
-   * Update an existing term (Teacher / Admin)
-   */
   public async updateTerm(updated: BiologyTerm): Promise<boolean> {
     const idx = this.terms.findIndex((t) => t.id === updated.id);
     if (idx === -1) return false;
@@ -195,9 +327,6 @@ class BiologyDataService {
     return true;
   }
 
-  /**
-   * Delete a term (Teacher / Admin)
-   */
   public async deleteTerm(id: string): Promise<boolean> {
     const beforeCount = this.terms.length;
     this.terms = this.terms.filter((t) => t.id !== id);
@@ -208,17 +337,11 @@ class BiologyDataService {
     return false;
   }
 
-  /**
-   * Reset database back to default initial seed
-   */
   public async resetToDefaults(): Promise<void> {
     localStorage.removeItem(STORAGE_KEY);
     this.terms = (defaultTerms as unknown) as BiologyTerm[];
   }
 
-  /**
-   * Export all terms as CSV string
-   */
   public exportToCsv(): string {
     const headers = [
       'id',
@@ -260,18 +383,13 @@ class BiologyDataService {
     return [headers.join(','), ...rows].join('\n');
   }
 
-  /**
-   * Import terms from CSV text
-   */
   public importFromCsv(csvText: string): number {
     const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
     if (lines.length <= 1) return 0;
 
     let addedCount = 0;
-    // Skip header line
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      // Basic CSV splitter respecting quotes
       const values: string[] = [];
       let inQuotes = false;
       let currentValue = '';
@@ -319,7 +437,9 @@ class BiologyDataService {
             keywords: keywordsStr ? keywordsStr.split(';').map((k) => k.trim()) : [englishTerm.toLowerCase()],
           };
 
-          const existingIdx = this.terms.findIndex((t) => t.id === newTerm.id || t.englishTerm.toLowerCase() === newTerm.englishTerm.toLowerCase());
+          const existingIdx = this.terms.findIndex(
+            (t) => t.id === newTerm.id || t.englishTerm.toLowerCase() === newTerm.englishTerm.toLowerCase()
+          );
           if (existingIdx !== -1) {
             this.terms[existingIdx] = newTerm;
           } else {
