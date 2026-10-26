@@ -1,0 +1,10 @@
+{
+  "name": "Trợ lý AI của cô Vy dạy Sinh học",
+  "description": "Một ứng dụng trò chuyện AI để giúp học sinh ôn thi tốt nghiệp trung học phổ thông môn Sinh học với cô giáo ảo Bùi Thị Tường Vy.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
